@@ -32,12 +32,17 @@ public class AppointmentService {
     public void deleteAppointment(Long id) {
         appointmentRepository.deleteById(id);
     }
+
     public Appointment bookAppointment(Appointment appointment) {
+        // You might add additional business logic here before saving,
+        // e.g., checking doctor's availability, patient's existing appointments, etc.
         return appointmentRepository.save(appointment);
     }
 
     public List<Appointment> getAppointmentsByDoctorAndDate(Long doctorId, LocalDate date) {
+
+
+
         return appointmentRepository.findAll(doctorId, date);
     }
-
 }
