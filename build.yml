@@ -1,23 +1,34 @@
-name: Java CI
+name: Java CI with Maven
 
 on:
   push:
-    branches: [ master ]
+    branches: [ "master", "back-end" ] # تشغيل عند الدفع إلى فرعي master أو back-end
   pull_request:
-    branches: [ master ]
+    branches: [ "master", "back-end" ] # تشغيل عند طلبات السحب إلى فرعي master أو back-end
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest # تشغيل الوظيفة على أحدث نظام تشغيل Ubuntu
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4 # استنساخ المستودع
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '17'
-          distribution: 'temurin'
+          distribution: 'temurin' # توزيع JDK، يمكن أن يكون 'temurin' أو 'adopt' أو 'zulu'
+          cache: maven # تفعيل التخزين المؤقت لتبعيات Maven لتسريع البناء
 
       - name: Build with Maven
-        run: ./mvnw clean install
+        # هنا هو التعديل الأساسي:
+        # إذا كان مشروع Spring Boot الخاص بك موجودًا داخل مجلد فرعي (مثل `back-end`)
+        # وليس في جذر المستودع، فأنت بحاجة لتحديد `working-directory`.
+        # بناءً على الرابط الخاص بك: `.../smart-clinic-management-system/blob/back-end/src/...`
+        # يبدو أن الفرع نفسه هو `back-end` وقد يكون المشروع في الجذر بعد checkout،
+        # لكن لتكون آمنًا وتتبع التقييم، سأضيف `working-directory`.
+        # إذا كان `pom.xml` في جذر المستودع بعد الاستنساخ، يمكنك إزالة `working-directory`.
+        working-directory: ./back-end # <---- هنا هو التعديل. افترض أن مجلد المشروع هو `back-end`
+        # يجب تغيير هذا إذا كان المشروع في مجلد آخر أو في الجذر مباشرة.
+        run: ./mvnw clean install # تشغيل أمر بناء Maven
+

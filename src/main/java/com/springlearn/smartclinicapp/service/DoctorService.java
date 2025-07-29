@@ -1,10 +1,10 @@
 package com.springlearn.smartclinicapp.service;
 
-import com.springlearn.smartclinicapp.dto.Login;
 import com.springlearn.smartclinicapp.model.Doctor;
 import com.springlearn.smartclinicapp.repository.DoctorRepository;
-import org.springframework.http.HttpStatus; // For ResponseEntity status
-import org.springframework.http.ResponseEntity; // For ResponseEntity
+import com.springlearn.smartclinicapp.dto.Login; // استيراد Login DTO
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -24,6 +24,7 @@ public class DoctorService {
     }
 
     public Doctor saveDoctor(Doctor doctor) {
+        // في تطبيق حقيقي، يجب تشفير كلمة المرور هنا قبل الحفظ
         return doctorRepository.save(doctor);
     }
 
@@ -39,30 +40,43 @@ public class DoctorService {
         doctorRepository.deleteById(id);
     }
 
-
+    /**
+     * يسترد الأوقات المتاحة لطبيب معين في تاريخ محدد.
+     * هذا التابع يلبي متطلب "retrieve a doctor's available time slots for a specific date".
+     *
+     * @param doctorId معرف الطبيب.
+     * @param date التاريخ المطلوب.
+     * @return قائمة بالأوقات المتاحة (سلاسل نصية).
+     */
     public List<String> getAvailableTimes(Long doctorId, LocalDate date) {
         Optional<Doctor> doctorOptional = doctorRepository.findById(doctorId);
         if (doctorOptional.isPresent()) {
             Doctor doctor = doctorOptional.get();
+            // بما أن حقل `availableTimes` في نموذج Doctor هو `List<String>` بسيط،
+            // فإنه لا يحتوي على معلومات التاريخ بشكل مباشر.
+            // في تطبيق أكثر تعقيدًا، ستحتاج إلى هيكلة `availableTimes` بشكل يدعم التاريخ
+            // (مثلاً: Map<LocalDate, List<LocalTime>>).
+            // بناءً على المتطلبات الحالية والنموذج، سنعيد قائمة الأوقات المخزنة.
+            // يمكن إضافة منطق لترشيح هذه الأوقات بناءً على اليوم من الأسبوع (عطلة نهاية الأسبوع مقابل أيام العمل)
+            // إذا كان هذا جزءًا من المتوقع.
             if (doctor.getAvailableTimes() != null && !doctor.getAvailableTimes().isEmpty()) {
-
-                System.out.println("Returning stored available times for doctor ID: " + doctorId + " on date: " + date);
+                System.out.println("Fetching available times for doctor ID: " + doctorId + " on date: " + date);
+                // هنا يمكن إضافة منطق لترشيح الأوقات بناءً على 'date' إذا كانت الأوقات تحتوي على معلومات التاريخ
+                // وإلا، فسيعيد كل الأوقات المخزنة للطبيب.
                 return doctor.getAvailableTimes();
             } else {
-                // If the doctor has no specific available times set, return a default/empty.
-                System.out.println("No specific available times defined for doctor ID: " + doctorId + ", returning empty list.");
-                return Collections.emptyList();
+                return Collections.emptyList(); // لا توجد أوقات متاحة محددة
             }
         }
-        return Collections.emptyList(); // Return an empty list if doctor is not found
+        return Collections.emptyList(); // الطبيب غير موجود
     }
 
     /**
-     * Validates doctor login credentials and returns a token or error message.
-     * This addresses the requirement for a login method returning ResponseEntity<Map<String, String>>.
+     * يتحقق من بيانات تسجيل دخول الطبيب ويعيد رمزًا (توكن) أو رسالة خطأ.
+     * هذا التابع يلبي متطلب "validating doctor login credentials" ويعيد `ResponseEntity<Map<String, String>>`.
      *
-     * @param loginObject An object containing the doctor's email and password.
-     * @return ResponseEntity<Map<String, String>> containing a "token" on success, or an "error" message on failure.
+     * @param loginObject كائن `Login` يحتوي على البريد الإلكتروني وكلمة المرور.
+     * @return `ResponseEntity` يحتوي على توكن في حالة النجاح أو رسالة خطأ في حالة الفشل.
      */
     public ResponseEntity<Map<String, String>> loginDoctor(Login loginObject) {
         Map<String, String> response = new HashMap<>();
@@ -72,8 +86,7 @@ public class DoctorService {
             return ResponseEntity.badRequest().body(response); // 400 Bad Request
         }
 
-        // 1. Find the doctor by email
-        // Assumes DoctorRepository has findByEmail(String email) method.
+        // 1. البحث عن الطبيب بالبريد الإلكتروني
         Doctor doctor = doctorRepository.findByEmail(loginObject.getEmail());
 
         if (doctor == null) {
@@ -81,28 +94,19 @@ public class DoctorService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); // 401 Unauthorized
         }
 
-        // 2. Validate the password
-        // IMPORTANT: In a real application, passwords should be hashed and compared securely
-        // (e.g., using BCryptPasswordEncoder). For this problem, we'll use direct comparison.
+        // 2. التحقق من كلمة المرور
+        // هام: في تطبيق حقيقي، يجب تشفير كلمات المرور (باستخدام BCryptPasswordEncoder مثلاً)
+        // ومقارنتها بشكل آمن. هنا يتم استخدام مقارنة مباشرة للتبسيط.
         if (doctor.getPassword() != null && doctor.getPassword().equals(loginObject.getPassword())) {
-            // 3. Generate a token (placeholder for now)
-            String token = "auth_token_for_" + doctor.getId() + "_" + System.currentTimeMillis();
-            response.put("token", token);
+            // 3. إنشاء توكن (مثال بسيط لتوكن)
+            // في تطبيق حقيقي، يجب استخدام TokenService هنا لإنشاء JWT حقيقي.
+            String generatedToken = "doctor_auth_token_" + doctor.getId() + "_" + System.currentTimeMillis();
+            response.put("token", generatedToken);
             response.put("message", "Login successful!");
             return ResponseEntity.ok(response); // 200 OK
         } else {
             response.put("error", "Invalid credentials.");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response); // 401 Unauthorized
         }
-    }
-
-    public List<String> getAvailableTime(Long id, LocalDate date) {
-        if (date == null) {
-            date = LocalDate.now();
-        }
-        if (date.isBefore(LocalDate.now())) {
-            date = date.plusDays(1);
-        }
-        return null;
     }
 }

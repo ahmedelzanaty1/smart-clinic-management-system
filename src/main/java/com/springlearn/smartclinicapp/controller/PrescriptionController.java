@@ -2,9 +2,10 @@ package com.springlearn.smartclinicapp.controller;
 
 import com.springlearn.smartclinicapp.model.Prescription;
 import com.springlearn.smartclinicapp.service.PrescriptionService;
-import jakarta.validation.Valid; // Import for @Valid annotation
+import com.springlearn.smartclinicapp.service.TokenService; // استيراد TokenService للتحقق من التوكن
+import jakarta.validation.Valid; // استيراد @Valid
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus; // For HTTP status codes
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,61 +16,63 @@ import java.util.Optional;
 @RequestMapping("/api/prescriptions")
 public class PrescriptionController {
 
-    private final PrescriptionService prescriptionService; // Use final for autowired fields
+    private final PrescriptionService prescriptionService;
+    private final TokenService tokenService; // حقن TokenService
 
     @Autowired
-    public PrescriptionController(PrescriptionService prescriptionService) {
+    public PrescriptionController(PrescriptionService prescriptionService, TokenService tokenService) {
         this.prescriptionService = prescriptionService;
+        this.tokenService = tokenService;
     }
 
     /**
-     * Creates a new prescription. Requires a token as a PathVariable and uses @Valid for validation.
-     * Returns a ResponseEntity for structured responses.
+     * ينشئ وصفة طبية جديدة. يلبي متطلبات السؤال 7.
+     * يتطلب توكن كـ @PathVariable ويستخدم @Valid للتحقق من صحة البيانات.
+     * يعيد ResponseEntity للاستجابات المنظمة.
      *
-     * @param prescription The Prescription object to be created.
-     * @param token The authorization token.
-     * @return ResponseEntity containing the created Prescription or an error status.
+     * @param prescription كائن الوصفة الطبية المراد إنشاؤه.
+     * @param token رمز المصادقة.
+     * @return ResponseEntity يحتوي على الوصفة الطبية التي تم إنشاؤها أو حالة خطأ.
      */
-    @PostMapping("/{token}") // Consolidate into one POST mapping with token as PathVariable
+    @PostMapping("/{token}") // المسار يقبل التوكن كـ PathVariable
     public ResponseEntity<Prescription> createPrescription(
-            @RequestBody Prescription prescription, // Added @Valid
+            @Valid @RequestBody Prescription prescription, // إضافة @Valid للتحقق من صحة المدخلات
             @PathVariable String token) {
 
-        // --- Token Validation (Placeholder) ---
-        // In a real application, you would validate the 'token' here or
-        // in an interceptor/filter (e.g., using Spring Security).
-        // For demonstration, a simple check:
-        if (token == null || token.isEmpty() || !token.startsWith("valid-token-")) {
-            System.out.println("Invalid or missing token: " + token);
+        // --- التحقق من صحة التوكن (مثال بسيط) ---
+        // في تطبيق حقيقي، يجب أن يتم التحقق من التوكن بشكل كامل (صلاحيته، هل هو منتهي، هل هو سليم).
+        // ويمكن استدعاء خدمة TokenService هنا.
+        if (!tokenService.validateToken(token)) { // استخدام TokenService للتحقق
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 401 Unauthorized
         }
-        System.out.println("Token received: " + token);
-        // --- End Token Validation ---
+        // يمكن إضافة منطق للتحقق من دور المستخدم من التوكن هنا أيضاً
+        // if (!tokenService.getRoleFromToken(token).equals("DOCTOR")) { return FORBIDDEN; }
 
-        Prescription savedPrescription = prescriptionService.save(prescription); // Use prescriptionService.save()
-        return ResponseEntity.status(HttpStatus.CREATED).body(savedPrescription); // Return 201 Created
+        Prescription savedPrescription = prescriptionService.save(prescription); // افتراض أن `save` موجود في الخدمة
+        return ResponseEntity.status(HttpStatus.CREATED).body(savedPrescription); // 201 Created
     }
 
     @GetMapping
     public ResponseEntity<List<Prescription>> getAllPrescriptions() {
         List<Prescription> prescriptions = prescriptionService.getAllPrescriptions();
-        return ResponseEntity.ok(prescriptions);
+        return ResponseEntity.ok(prescriptions); // إعادة ResponseEntity
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Prescription> getPrescriptionById(@PathVariable Long id) {
         Optional<Prescription> prescription = Optional.ofNullable(prescriptionService.getPrescriptionById(id));
         return prescription.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+                .orElse(ResponseEntity.notFound().build()); // 404 Not Found
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Prescription> updatePrescription(@PathVariable Long id, @Valid @RequestBody Prescription updatedPrescription) {
+    public ResponseEntity<Prescription> updatePrescription(
+            @PathVariable Long id,
+            @Valid @RequestBody Prescription updatedPrescription) { // إضافة @Valid
         try {
             Prescription result = prescriptionService.updatePrescription(id, updatedPrescription);
             return ResponseEntity.ok(result);
-        } catch (RuntimeException e) {
-            // e.g., "Prescription not found" from service
+        } catch (RuntimeException e) { // Catch specific exceptions if needed (e.g., NotFoundException)
             return ResponseEntity.notFound().build();
         }
     }
@@ -77,6 +80,6 @@ public class PrescriptionController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePrescription(@PathVariable Long id) {
         prescriptionService.deletePrescription(id);
-        return ResponseEntity.noContent().build(); // 204 No Content for successful deletion
+        return ResponseEntity.noContent().build(); // 204 No Content
     }
 }

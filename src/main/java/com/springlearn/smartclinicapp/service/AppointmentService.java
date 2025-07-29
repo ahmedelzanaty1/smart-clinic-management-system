@@ -33,16 +33,15 @@ public class AppointmentService {
         appointmentRepository.deleteById(id);
     }
 
+
     public Appointment bookAppointment(Appointment appointment) {
-        // You might add additional business logic here before saving,
-        // e.g., checking doctor's availability, patient's existing appointments, etc.
+        // يمكنك إضافة منطق أعمال إضافي هنا قبل الحفظ،
+        // مثل التحقق من توفر الطبيب، مواعيد المريض الحالية، وما إلى ذلك.
         return appointmentRepository.save(appointment);
     }
 
+
     public List<Appointment> getAppointmentsByDoctorAndDate(Long doctorId, LocalDate date) {
-
-
-
-        return appointmentRepository.findAll(doctorId, date);
+        return appointmentRepository.findByDoctorIdAndAppointmentDate(doctorId, date);
     }
 }

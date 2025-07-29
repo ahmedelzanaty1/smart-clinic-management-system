@@ -62,4 +62,9 @@ public class TokenService {
                 .getBody();
         return claimsResolver.apply(claims);
     }
+
+    public boolean validateToken(String token) {
+        token = extractClaim(token, Claims::getSubject);
+        return token != null;
+    }
 }

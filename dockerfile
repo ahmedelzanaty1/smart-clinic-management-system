@@ -1,49 +1,46 @@
 #
-# Stage 1: Build the Spring Boot application
+# المرحلة 1: بناء تطبيق Spring Boot
+# هذه المرحلة تستخدم صورة Maven لترجمة التطبيق وإنشاء ملف JAR التنفيذي.
 #
 FROM maven:3.8.7-openjdk-17-slim AS build
 
-# Set the working directory inside the container
+# تعيين دليل العمل داخل الحاوية
 WORKDIR /app
 
-# Copy the Maven project files (pom.xml) first to leverage Docker cache
-# if only source code changes
+# نسخ ملف pom.xml أولاً للاستفادة من ذاكرة التخزين المؤقت لـ Docker
+# إذا تغير فقط الكود المصدري، فلن يعاد تنزيل التبعيات في كل مرة.
 COPY pom.xml .
 
-# Copy the rest of the application source code
+# نسخ باقي الكود المصدري للتطبيق
 COPY src ./src
 
-# Build the application
-# -DskipTests: Skips running tests to speed up the build in Docker,
-#              consider running tests in a separate CI/CD step.
-# -Dspring-boot.repackage.skip: Prevents Spring Boot from creating the executable JAR
-#                               in this step, as we'll do it explicitly later.
-#                               (Not strictly necessary if `clean install` makes the jar,
-#                               but good practice if you want fine-grained control).
+# بناء التطبيق
+# -DskipTests: لتخطي تشغيل الاختبارات لتسريع عملية البناء في Docker.
+#               يمكن تشغيل الاختبارات في خطوة CI/CD منفصلة.
 RUN mvn clean install -DskipTests
 
 #
-# Stage 2: Create the final lightweight runtime image
+# المرحلة 2: إنشاء صورة تشغيل خفيفة الوزن نهائية
+# هذه المرحلة تستخدم صورة JRE خفيفة الوزن لتشغيل ملف JAR المترجم.
+# يتم نسخ فقط ملف JAR من المرحلة السابقة لتقليل حجم الصورة النهائية.
 #
 FROM openjdk:17-jre-slim
 
-# Set the working directory in the runtime image
+# تعيين دليل العمل في صورة وقت التشغيل
 WORKDIR /app
 
-# Copy the built JAR file from the 'build' stage
-# The JAR file is typically found in target/
-# Replace 'smart-clinic-app.jar' with your actual JAR name if it's different
-# You can find the exact JAR name in your pom.xml under <build><finalName> or by checking your local target/ directory.
-COPY --from=build /app/target/*.jar smart-clinic-app.jar
+# نسخ ملف JAR المترجم من مرحلة 'build'
+# افترض أن اسم ملف JAR الناتج هو `smart-clinic-app.jar`
+# تأكد من مطابقة هذا الاسم مع `finalName` في ملف pom.xml الخاص بك، أو استخدم `*.jar` للنسخ
+COPY --from=build /app/target/smart-clinic-app.jar smart-clinic-app.jar
 
-# Expose the port your Spring Boot application listens on (default is 8080)
+# كشف المنفذ الذي يستمع عليه تطبيق Spring Boot (الافتراضي هو 8080)
 EXPOSE 8080
 
-# Define the command to run your application
-# Use ENTRYPOINT for the main command and CMD for default arguments,
-# allowing them to be overridden easily.
+# تعريف الأمر لتشغيل تطبيقك عند بدء تشغيل الحاوية
+# استخدام ENTRYPOINT يضمن أن هذا الأمر سيتم تنفيذه دائمًا عند بدء الحاوية.
 ENTRYPOINT ["java", "-jar", "smart-clinic-app.jar"]
 
-# Optional: If your application needs specific Spring profiles or arguments,
-# you can add them to CMD. For example, to run with a 'prod' profile:
-# CMD ["java", "-jar", "smart-clinic-app.jar", "--spring.profiles.active=prod"]
+# اختياري: إذا كان تطبيقك يحتاج إلى ملفات تعريف Spring محددة أو وسائط،
+# يمكنك إضافتها إلى CMD. على سبيل المثال، لتشغيل مع ملف تعريف 'prod':
+# CMD ["--spring.profiles.active=prod"]
