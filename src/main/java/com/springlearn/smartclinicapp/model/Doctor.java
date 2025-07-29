@@ -9,19 +9,6 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Doctor {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false)
-    private String name;
-
-    private String specialization;
-
-    @Column(unique = true)
-    private String email;
-
-    private String phone;
+public class Doctor extends User {
+    private String specialty;
 }
