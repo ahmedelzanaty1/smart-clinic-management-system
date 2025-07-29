@@ -11,18 +11,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Patient {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private String name;
-
-    @Column(unique = true)
-    private String email;
-
-    private String phone;
-
-    private LocalDate dateOfBirth;
+public class Patient extends User {
+    private String gender;
+    private LocalDate birthDate;
 }
