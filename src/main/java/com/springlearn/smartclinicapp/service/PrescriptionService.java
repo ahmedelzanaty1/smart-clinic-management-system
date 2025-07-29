@@ -41,4 +41,9 @@ public class PrescriptionService {
     public void deletePrescription(Long id) {
         prescriptionRepository.deleteById(id);
     }
+
+    public Prescription save(Prescription p) {
+        prescriptionRepository.save(p);
+        return p;
+    }
 }

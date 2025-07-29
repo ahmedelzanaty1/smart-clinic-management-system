@@ -5,6 +5,7 @@ import com.springlearn.smartclinicapp.service.DoctorService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -39,4 +40,9 @@ public class DoctorController {
         doctorService.deleteDoctor(id);
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/{id}/available-times")
+    public ResponseEntity<List<String>> getAvailableTimes(@PathVariable Long id, @RequestParam LocalDate date, @RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(doctorService.getAvailableTime(id, date));
+    }
+
 }

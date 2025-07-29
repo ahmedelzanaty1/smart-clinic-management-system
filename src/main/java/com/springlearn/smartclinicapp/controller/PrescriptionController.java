@@ -4,6 +4,7 @@ package com.springlearn.smartclinicapp.controller;
 import com.springlearn.smartclinicapp.model.Prescription;
 import com.springlearn.smartclinicapp.service.PrescriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,4 +40,10 @@ public class PrescriptionController {
     public void deletePrescription(@PathVariable Long id) {
         prescriptionService.deletePrescription(id);
     }
+    @PostMapping("/{token}")
+    public ResponseEntity<Prescription> createPrescription(@RequestBody Prescription p, @PathVariable String token) {
+        // تحقق من التوكن هنا...
+        return ResponseEntity.ok(prescriptionService.save(p));
+    }
+
 }
